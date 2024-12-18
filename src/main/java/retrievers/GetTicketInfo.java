@@ -2,11 +2,12 @@ package retrievers;
 
 import entities.Ticket;
 import entities.Release;
+import entities.Class;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import retrievers.GetJiraInfo;
-import java.awt.desktop.SystemEventListener;
+import org.eclipse.jgit.api.errors.GitAPIException;
+
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -15,13 +16,13 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.io.*;
 import java.net.URL;
+import static utils.JSON.readJsonFromUrl;
 
 public class GetTicketInfo {
     public static ArrayList<Ticket> tickets;
     public static ArrayList<Release> releases = new ArrayList<>();
 
-    public static void main(String[] args) throws JSONException, IOException {
-        String projectName = "BOOKKEEPER";
+    public static void main(String[] args) throws JSONException, IOException, GitAPIException {        String projectName = "BOOKKEEPER";
         String query = "search?jql=project=" + projectName + "+and+type=bug+and+(status=closed+or+status=resolved)+and+resolution=fixed&maxResults=1000";
         String url = "https://issues.apache.org/jira/rest/api/2/" + query;
 
@@ -44,8 +45,16 @@ public class GetTicketInfo {
                 tickets.add(getTicketInfo(issues.getJSONObject(i)));
             } catch (JSONException e) {
                 e.printStackTrace();
+
+
             }
         }
+        System.out.println("-------- tickets having proportion ----------------------");
+        for (Ticket ticket : tickets) {
+            if (ticket.proportion != 0)
+                System.out.println(ticket.fixVersion.getName());
+        }
+
         System.out.println("proportion mean: " + getProportionMean());
         Proportion.estimateInjectedVersion(tickets, getProportionMean());
         for (Ticket ticket : tickets) {
@@ -66,6 +75,7 @@ public class GetTicketInfo {
             System.out.println("Fix version: " + ticket.fixVersion.getName());
             System.out.println('\n');
         }
+        CommitRetriever.retrieveCommits();
     }
 
     public static Ticket getTicket(JSONObject ticketInfo) throws JSONException {
@@ -99,7 +109,12 @@ public class GetTicketInfo {
 
 
         if (ticket.affectedVersions != null) {
-                    ticket.injectedVersion = ticket.affectedVersions.get(0);
+            Release injVersion = ticket.affectedVersions.get(0);
+            for (Release affVersion: ticket.affectedVersions) {
+                if (affVersion.getId() < injVersion.getId())
+                    injVersion = affVersion;
+            }
+            ticket.injectedVersion = injVersion;
                     computeProportion(ticket);
                 }
 
@@ -118,21 +133,14 @@ public static float getProportionMean() {
         return sum/count;
     }
 
-    private static Release getRelease(LocalDateTime date) {
+    public static Release getRelease(LocalDateTime date) {
         int i = 0;
         while (releases.get(i).getDate().isBefore(date)) {
             i++;
         }
         return i;
     }
-    /*
-     *   proportion = (fixVersion - injectedVersion)/(fixVersion - openingVersion)
-     *
-     *   ASSUMPTION: we're considering in proportion's computation only the tickets with fixVersion > openingVersion > injectedVersion, in order to:
-     *   - avoid fixVersion = openingVersion -> proportion = infinity
-     *   - avoid fixVersion = injectedVersion -> proportion = 0
-     *   - discard invalid affectedVersions, i.e. with openingVersion > fixVersion, injectedVersion > fixVersion and injectedVersion > openingVersion
-     */
+
 
     public static void computeProportion(Ticket ticket) {
 
@@ -144,21 +152,5 @@ public static float getProportionMean() {
         }
     }
 
-    public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-        try (InputStream is = new URL(url).openStream()) {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            String jsonText = readAll(rd);
-            return new JSONObject(jsonText);
-        }
-    }
-
-    private static String readAll(Reader rd) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        int cp;
-        while ((cp = rd.read()) != -1) {
-            sb.append((char) cp);
-        }
-        return sb.toString();
-    }
 
 }
