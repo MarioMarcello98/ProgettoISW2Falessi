@@ -10,15 +10,16 @@ public class Class {
     private List<RevCommit> associatedCommits;
     private boolean isBuggy;
     private int size;
-    private int LOCTouched;
     private int NAuth;
     private int NFix;
     private int NR;
     private int LOCAdded;
     private int maxLOCAdded;
-    private int averageLOCAdded;
+    private float averageLOCAdded;
     private int churn;
-    private int changeSetSize;
+    private int maxChurn;
+    private float averageChurn;
+    private int age;
     public Class(String name, String implementation, Release release) {
         this.name = name;
         this.implementation = implementation;
@@ -26,7 +27,6 @@ public class Class {
         this.associatedCommits = new ArrayList<>();
         this.isBuggy = false;
         this.size = 0;
-        this.LOCTouched = 0;
         this.NAuth = 0;
         this.NFix = 0;
         this.NR = 0;
@@ -34,7 +34,9 @@ public class Class {
         this.maxLOCAdded = 0;
         this.averageLOCAdded = 0;
         this.churn = 0;
-        this.changeSetSize = 0;
+        this.maxChurn = 0;
+        this.averageChurn = 0;
+        this.age=0;
     }
     public String getName() {
         return name;
@@ -66,12 +68,6 @@ public class Class {
     public void setSize(int size) {
         this.size = size;
     }
-    public int getLOCTouched() {
-        return LOCTouched;
-    }
-    public void setLOCTouched(int LOCTouched) {
-        this.LOCTouched = LOCTouched;
-    }
     public int getNAuth() {
         return NAuth;
     }
@@ -102,7 +98,7 @@ public class Class {
     public void setMaxLOCAdded(int maxLOCAdded) {
         this.maxLOCAdded = maxLOCAdded;
     }
-    public int getAverageLOCAdded() {
+    public float getAverageLOCAdded() {
         return averageLOCAdded;
     }
     public void setAverageLOCAdded(int averageLOCAdded) {
@@ -114,17 +110,28 @@ public class Class {
     public void setChurn(int churn) {
         this.churn = churn;
     }
-    public int getChangeSetSize() {
-        return changeSetSize;
-    }
-    public void setChangeSetSize(int changeSetSize) {
-        this.changeSetSize = changeSetSize;
-    }
     public String getImplementation() {
         return implementation;
     }
     public void setImplementation(String implementation) {
         this.implementation = implementation;
     }
-
+    public int getMaxChurn() {
+        return maxChurn;
+    }
+    public void setMaxChurn(int maxChurn) {
+        this.maxChurn = maxChurn;
+    }
+    public float getAverageChurn() {
+        return averageChurn;
+    }
+    public void setAverageChurn(float averageChurn) {
+        this.averageChurn = averageChurn;
+    }
+    public int getAge() {
+        return age;
+    }
+    public void setAge(int age) {
+        this.age = age;
+    }
 }
