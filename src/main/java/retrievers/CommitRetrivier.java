@@ -22,7 +22,9 @@ import java.time.Month;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
-import org.eclipse.jgit.util.io.DisabledOutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import org.eclipse.jgit.util.io.NullOutputStream;
 
 import org.eclipse.jgit.lib.ObjectId;
@@ -41,17 +43,20 @@ public class CommitRetriever {
         System.out.println("------------- retrieving the commits for " + projName + "-----------------");
         repository = new FileRepository(projName.toLowerCase() + "/.git/");
         try (Git git = new Git(repository)) {
-            LocalDateTime lastRelease = GetTicketInfo.releases.get(Math.round(GetTicketInfo.releases.size() / 2)).getDate();
-            List<Ref> branches = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
+            LocalDateTime lastRelease = GetTicketInfo.releases.get(Math.round((float)GetTicketInfo.releases.size() / 2)).getDate();            List<Ref> branches = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
             for (Ref branch : branches) {
                 Iterable<RevCommit> branchCommits = git.log().add(repository.resolve(branch.getName())).call();
                 for (RevCommit commit : branchCommits) {
                     LocalDateTime commitDate = commit.getAuthorIdent().getWhen().toInstant().atZone(commit.getAuthorIdent().getZoneId()).toLocalDateTime();
-                    if (commitDate.isBefore(lastRelease) || commitDate.isEqual(lastRelease) && !commits.contains(commit))
-                        commits.add(commit);
+                    if (!commits.contains(commit)) {
+                        if (commitDate.isBefore(lastRelease) || commitDate.isEqual(lastRelease))
+                            commits.add(commit);
+                    }
+
                 }
             }
-            for (int i = 0; i < Math.round(GetTicketInfo.releases.size()/2); i++) {
+            System.out.println("Number of total commits: " + commits.size());
+            for (int i = 0; i < Math.round((float)GetTicketInfo.releases.size()/2); i++) {
                 LocalDateTime firstDate;
                 if (i == 0) {
                     firstDate = LocalDateTime.of(1970, 01, 01, 0, 0);
@@ -65,7 +70,6 @@ public class CommitRetriever {
                 if (!release.getAssociatedCommits().isEmpty())
                     System.out.println(release.getId() + ": " + release.getAssociatedCommits().size() + ", last commit: " + release.getLastCommit().getAuthorIdent().getWhen());
             }
-            System.out.println("Number of total commits: " + commits.size());
             List<Release> releases = GetTicketInfo.releases.subList(0, Math.round(GetTicketInfo.releases.size()/2));
             List<List<Class>> classes = new ArrayList<>();
             for (Release release : releases) {
@@ -98,7 +102,7 @@ public class CommitRetriever {
             System.out.println("Buggy classes: " + count);
             System.out.println("Versions of the buggy classes: " + versions);
             ComputeMetrics computeMetrics = new ComputeMetrics();
-            computeMetrics.computeMetrics(allClasses);
+            computeMetrics.computeMetrics(allClasses, projName);
             CSV.generateCSV(allClasses, projName);
 
         } catch (GitAPIException e) {

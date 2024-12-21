@@ -8,8 +8,8 @@ public class Main {
         try {
             List<Ticket> allTickets = GetTicketInfo.retrieveTickets("BOOKKEEPER");
             CommitRetriever.retrieveCommits("BOOKKEEPER", allTickets);
-            //List<Ticket> allTickets = GetTicketInfo.retrieveTickets("STORM");
-            //CommitRetriever.retrieveCommits("STORM", allTickets);
+            //List<Ticket> allTickets = GetTicketInfo.retrieveTickets("OPENJPA");
+            //CommitRetriever.retrieveCommits("OPENJPA", allTickets);
         } catch (JSONException | IOException e) {
             e.printStackTrace();
         }

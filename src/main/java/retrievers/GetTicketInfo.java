@@ -180,19 +180,8 @@ public class GetTicketInfo {
         return rels.get(i);
     }
 
-
-   /* public static void computeProportion(Ticket ticket) {
-
-        if (ticket.fixVersion.getId() > ticket.openingVersion.getId()
-                && ticket.fixVersion.getId() > ticket.injectedVersion.getId()
-                && ticket.injectedVersion.getId() < ticket.openingVersion.getId()) {
-            ticket.proportion = (float)(ticket.fixVersion.getId() - ticket.injectedVersion.getId())/(ticket.fixVersion.getId() - ticket.openingVersion.getId());ù
-        System.out.println(ticket.proportion);
-        }
-    } */
    public static List<Ticket> getTicketsWithAV(List<Ticket> tickets) {
        List<Ticket> filteredTickets = filterTickets(tickets);
-       System.out.println(filteredTickets.size());
         List<Ticket> ticketsWithAV = new ArrayList<>();
         for (Ticket ticket : filteredTickets) {
             if (ticket.fixVersion.getId() != ticket.injectedVersion.getId()) {
