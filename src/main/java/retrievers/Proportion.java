@@ -32,6 +32,7 @@ public class Proportion {
     public static void coldStartProportion(ArrayList<Ticket> tickets, String projName) throws JSONException, IOException {
 
         ArrayList<Float> proportionValues = new ArrayList<>();
+        List<Release> releases = GetJiraInfo.getReleaseInfo(projName, true, 0, false);
         FileWriter fileWriter = null;
         Path proportionFile = Paths.get("Proportion" + projName + ".csv");
         if (!Files.exists(proportionFile)) {
@@ -61,7 +62,7 @@ public class Proportion {
         int proportionValue = Math.round(median(proportionValues));
         for (Ticket ticket : tickets) {
             if (ticket.proportion == 0) {
-                ticket.injectedVersion = GetTicketInfo.releases.get(
+                ticket.injectedVersion = releases.get(
                         Math.max(0, Math.round((float) ticket.fixVersion.getId() - (ticket.fixVersion.getId() - ticket.openingVersion.getId()) * proportionValue) - 1)
                 );
             }
@@ -113,8 +114,7 @@ public class Proportion {
         int startAt = 0;
         ArrayList<Ticket> tickets = new ArrayList<>();
         JSONObject json;
-        List<Release> releases = GetJiraInfo.getReleaseInfo(projName);
-        System.out.println("Retrieving tickets for project " + projName);
+        List<Release> releases = GetJiraInfo.getReleaseInfo(projName, true, 0, false);        System.out.println("Retrieving tickets for project " + projName);
         do {
             String query = "search?jql=project=" + projName + "+and+type=bug+and+(status=closed+or+status=resolved)+and+resolution=fixed&maxResults=1000&startAt=" + startAt;
             String url = "https://issues.apache.org/jira/rest/api/2/" + query;
@@ -122,7 +122,7 @@ public class Proportion {
             JSONArray issues = json.getJSONArray("issues");
             for (int i = 0; i < issues.length(); i++) {
                 try {
-                    tickets.add(GetTicketInfo.getTicket(issues.getJSONObject(i), releases));
+                    tickets.add(GetTicketInfo.getTicket(issues.getJSONObject(i), releases, releases.get(releases.size()-1).getDate()));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 } catch (InvalidTicketException e) {

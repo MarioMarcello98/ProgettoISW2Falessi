@@ -26,7 +26,7 @@ public class GetJiraInfo {
     //public static ArrayList<LocalDateTime> releases;    public static Integer numVersions;
     public static ArrayList<Release> releases;
 
-    public static ArrayList<Release> getReleaseInfo(String projName) throws IOException, JSONException, org.codehaus.jettison.json.JSONException {
+    public static List<Release> getReleaseInfo(String projName, boolean ignoreCSV, int numVersions, boolean splitReleases) throws IOException, JSONException, org.codehaus.jettison.json.JSONException {
         releases = new ArrayList<>();
         int i;
         String url = "https://issues.apache.org/jira/rest/api/2/project/" + projName;
@@ -62,9 +62,14 @@ public class GetJiraInfo {
                 addRelease(j + 1, releasesOrderedArray.get(i));
                 j++;
             }
-
-        CSV.generateCSVForVersions(releases, projName);
         }
+
+            if (!ignoreCSV)
+                CSV.generateCSVForVersions(releases, projName);
+            if (numVersions > 0)
+                return releases.subList(0, numVersions);
+            else if (splitReleases)
+                return releases.subList(0, Math.round((float)releases.size()/2));
         return releases;
     }
 

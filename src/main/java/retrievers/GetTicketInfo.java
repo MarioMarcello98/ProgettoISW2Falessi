@@ -2,87 +2,31 @@ package retrievers;
 import exception.InvalidTicketException;
 import entities.Ticket;
 import entities.Release;
+import java.io.IOException;
 import entities.Class;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.eclipse.jgit.api.errors.GitAPIException;
 
-import java.io.*;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.io.*;
 import java.net.URL;
 import static utils.JSON.readJsonFromUrl;
 
 public class GetTicketInfo {
-    public static ArrayList<Release> releases = new ArrayList<>();
-
-    /*public static void main(String[] args) throws JSONException, IOException {
-        String projectName = "BOOKKEEPER";
-        String query = "search?jql=project=" + projectName + "+and+type=bug+and+(status=closed+or+status=resolved)+and+resolution=fixed&maxResults=1000";
-        String url = "https://issues.apache.org/jira/rest/api/2/" + query;
-
-        JSONObject json = readJsonFromUrl(url);
-        JSONArray issues = json.getJSONArray("issues");
-        System.out.println(issues.length());
-
-        tickets = new ArrayList<>();
-
-        releases = GetJiraInfo.getJiraInfo(projectName);
-        for (int i = 0; i < releases.size(); i++) {
-            System.out.println(releases.get(i).getId());
-            System.out.println(releases.get(i).getName());
-            System.out.println(releases.get(i).getDate());
-            System.out.println("____________________________");
-        }
-
-        for (int i = 0; i < issues.length(); i++) {
-            try {
-                tickets.add(getTicketInfo(issues.getJSONObject(i)));
-            } catch (JSONException e) {
-                e.printStackTrace();
+    public static ArrayList<Ticket> retrieveTickets(String projName, int numReleases) throws JSONException, IOException {
 
 
-            }
-        }
-        System.out.println("-------- tickets having proportion ----------------------");
-        for (Ticket ticket : tickets) {
-            if (ticket.proportion != 0)
-                System.out.println(ticket.fixVersion.getName());
-        }
-
-        System.out.println("proportion mean: " + getProportionMean());
-        Proportion.estimateInjectedVersion(tickets, getProportionMean());
-        for (Ticket ticket : tickets) {
-            ArrayList<String> affVersionsNames = new ArrayList<>();
-            if (ticket.affectedVersions != null) {
-                for (int i = 0; i < ticket.affectedVersions.size(); i++) {
-                    affVersionsNames.add(ticket.affectedVersions.get(i).getName());
-                }
-            }
-
-            System.out.println("id: " + ticket.id);
-            System.out.println(ticket.key);
-            System.out.println("Affected versions: " + affVersionsNames);
-            System.out.println("Opening version: " + ticket.openingVersion.getName());
-            if (ticket.injectedVersion != null)
-                System.out.println("Injected version: " + ticket.injectedVersion.getName());
-            else System.out.println("Injected version: " + null);
-            System.out.println("Fix version: " + ticket.fixVersion.getName());
-            System.out.println('\n');
-        }
-        CommitRetriever.retrieveCommits();
-    }
-*/
-    public static ArrayList<Ticket> retrieveTickets(String projName) throws JSONException, IOException {
-        int startAt = 0;
+    int startAt = 0;
 
         ArrayList<Ticket> tickets = new ArrayList<>();
         JSONObject json;
+        List<Release> releases = GetJiraInfo.getReleaseInfo(projName, false, numReleases, false);
+        LocalDateTime lastDate = releases.get(releases.size()-1).getDate();
         releases = GetJiraInfo.getReleaseInfo(projName);
         System.out.println("Retrieving tickets for project " + projName);
         do {
@@ -92,8 +36,7 @@ public class GetTicketInfo {
             JSONArray issues = json.getJSONArray("issues");
             for (int i = 0; i < issues.length(); i++) {
                 try {
-                    tickets.add(getTicket(issues.getJSONObject(i), releases));
-                } catch (JSONException e) {
+                    tickets.add(getTicket(issues.getJSONObject(i), releases, lastDate));                } catch (JSONException e) {
                     e.printStackTrace();
                 } catch (InvalidTicketException e) {
                     // ignore: invalid ticket
@@ -113,7 +56,7 @@ public class GetTicketInfo {
         Proportion.coldStartProportion(tickets, projName);
         return tickets;
     }
-    public static Ticket getTicket(JSONObject ticketInfo, List<Release> rels) throws JSONException, InvalidTicketException, IOException {
+    public static Ticket getTicket(JSONObject ticketInfo, List<Release> rels, LocalDateTime lastDate) throws JSONException, InvalidTicketException, IOException {
         Ticket ticket = new Ticket();
 
         JSONObject fields = ticketInfo.getJSONObject("fields");
@@ -129,10 +72,13 @@ public class GetTicketInfo {
         }
         ticket.id = ticketInfo.get("id").toString();
         ticket.key = ticketInfo.get("key").toString();
-        ticket.fixVersion = getRelease(resolutionDate, rels);
         LocalDateTime creationDate = LocalDateTime.parse(fields.get("created").toString().substring(0, 21));
-        ticket.openingVersion = getRelease(creationDate, rels);
-
+        ticket.openingVersion = getRelease(creationDate);        // walk-forward
+        if (creationDate.isAfter(lastDate)) {
+            System.out.println("issue found for ticket " + ticket.key + "; creation date = " + creationDate + " vs " + lastDate);
+            throw new InvalidTicketException();
+        }
+        ticket.fixVersion = getRelease(resolutionDate);
 
         JSONArray versions = fields.getJSONArray("versions");
 
@@ -142,7 +88,7 @@ public class GetTicketInfo {
         } else {
             for (int i = 0; i < versions.length(); i++) {
                 if (versions.getJSONObject(i).has("releaseDate"))
-                    ticket.affectedVersions.add(getRelease(LocalDate.parse(versions.getJSONObject(i).get("releaseDate").toString()).atStartOfDay(), rels));
+                    ticket.affectedVersions.add(getRelease(LocalDate.parse(versions.getJSONObject(i).get("releaseDate").toString()).atStartOfDay()));
                 }
             }
 
@@ -172,16 +118,19 @@ public class GetTicketInfo {
         return sum/count;
     }
 
-    public static Release getRelease(LocalDateTime date, List<Release> rels) throws JSONException, IOException {
+    public static Release getRelease(LocalDateTime date) {
         int i = 0;
+
+        List<Release> rels = GetJiraInfo.releases;
+
         while (rels.get(i).getDate().isBefore(date)) {
-            i++;
+        i++;
         }
         return rels.get(i);
     }
 
-   public static List<Ticket> getTicketsWithAV(List<Ticket> tickets) {
-       List<Ticket> filteredTickets = filterTickets(tickets);
+    public static List<Ticket> getTicketsWithAV(List<Ticket> tickets, List<Release> releases) {
+        List<Ticket> filteredTickets = filterTickets(tickets, releases);
         List<Ticket> ticketsWithAV = new ArrayList<>();
         for (Ticket ticket : filteredTickets) {
             if (ticket.fixVersion.getId() != ticket.injectedVersion.getId()) {
@@ -192,10 +141,10 @@ public class GetTicketInfo {
 
         return ticketsWithAV;
     }
-    private static List<Ticket> filterTickets(List<Ticket> tickets) {
-       List<Ticket> filteredList = new ArrayList<>();
+    private static List<Ticket> filterTickets(List<Ticket> tickets, List<Release> releases) {
+        List<Ticket> filteredList = new ArrayList<>();
         for (Ticket ticket : tickets) {
-            if (ticket.injectedVersion.getId() < Math.round(releases.size()/2))
+            if (!ticket.injectedVersion.getDate().isAfter(releases.get(releases.size()-1).getDate()))
                 filteredList.add(ticket);
         }
         return filteredList;
