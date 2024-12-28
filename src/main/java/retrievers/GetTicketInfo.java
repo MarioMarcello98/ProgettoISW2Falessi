@@ -54,6 +54,13 @@ public class GetTicketInfo {
         System.out.println("Tickets having proportion (project " + projName + "):"  + count + " over " + tickets.size() + " tickets");
         System.out.println("proportion mean (project " + projName + "):" + getProportionMean(tickets));
         Proportion.coldStartProportion(tickets, projName);
+        count = 0;
+        for (Ticket ticket : tickets) {
+            if (ticket.fixVersion != null)
+                System.out.println(ticket.key + " - " + ticket.injectedVersion.getId() + ", " + ticket.openingVersion.getId() + ", " + ticket.fixVersion.getId());
+        }
+        System.out.println("Tickets having injected version: " + count);
+
         return tickets;
     }
     public static Ticket getTicket(JSONObject ticketInfo, List<Release> rels, LocalDateTime lastDate) throws JSONException, InvalidTicketException, IOException {
@@ -64,22 +71,26 @@ public class GetTicketInfo {
             throw new InvalidTicketException();
         }
 
-
+        LocalDateTime creationDate = LocalDateTime.parse(fields.get("created").toString().substring(0, 21));
         LocalDateTime resolutionDate = LocalDateTime.parse(fields.get("resolutiondate").toString().substring(0, 21));
         if (resolutionDate.isAfter(rels.get(rels.size() - 1).getDate())) {
             /* this ticket has been resolved in a release that hasn't been released yet, so it is ignored */
-            throw new InvalidTicketException();
+            ticket.fixVersion = null;
+        } else {
+            ticket.fixVersion = getRelease(resolutionDate);
         }
         ticket.id = ticketInfo.get("id").toString();
         ticket.key = ticketInfo.get("key").toString();
-        LocalDateTime creationDate = LocalDateTime.parse(fields.get("created").toString().substring(0, 21));
-        ticket.openingVersion = getRelease(creationDate);        // walk-forward
+
         if (creationDate.isAfter(lastDate)) {
             System.out.println("issue found for ticket " + ticket.key + "; creation date = " + creationDate + " vs " + lastDate);
             throw new InvalidTicketException();
         }
-        ticket.fixVersion = getRelease(resolutionDate);
-
+        ticket.openingVersion = getRelease(creationDate);
+        JSONArray components = fields.getJSONArray("components");
+        for (int i = 0; i < components.length(); i++) {
+            ticket.affectedComponents.add(components.getJSONObject(i).get("name").toString());
+        }
         JSONArray versions = fields.getJSONArray("versions");
 
         if (versions.isNull(0)) {
@@ -99,8 +110,10 @@ public class GetTicketInfo {
                 if (affVersion.getId() < injVersion.getId())
                     injVersion = affVersion;
             }
-            ticket.injectedVersion = injVersion;
-            Proportion.computeProportion(ticket);
+            if (injVersion.getId() <= ticket.openingVersion.getId()) {
+                ticket.injectedVersion = injVersion;
+                Proportion.computeProportion(ticket);
+            }
         }
 
 
@@ -129,12 +142,15 @@ public class GetTicketInfo {
         return rels.get(i);
     }
 
-    public static List<Ticket> getTicketsWithAV(List<Ticket> tickets, List<Release> releases) {
-        List<Ticket> filteredTickets = filterTickets(tickets, releases);
+    public static List<Ticket> getTicketsWithAV(List<Ticket> tickets) {//List<Ticket> filteredTickets = filterTickets(tickets, releases);
         List<Ticket> ticketsWithAV = new ArrayList<>();
-        for (Ticket ticket : filteredTickets) {
-            if (ticket.fixVersion.getId() != ticket.injectedVersion.getId()) {
-                // these tickets have fix version different from the injected version, so they have AV
+        //for (Ticket ticket : filteredTickets) {
+        for (Ticket ticket : tickets) {
+            if (ticket.fixVersion == null) {
+                ticketsWithAV.add(ticket);
+                continue;
+            }
+            if (ticket.fixVersion.getId() > ticket.injectedVersion.getId()) {// these tickets have fix version different from the injected version, so they have AV
                 ticketsWithAV.add(ticket);
             }
         }
@@ -144,7 +160,7 @@ public class GetTicketInfo {
     private static List<Ticket> filterTickets(List<Ticket> tickets, List<Release> releases) {
         List<Ticket> filteredList = new ArrayList<>();
         for (Ticket ticket : tickets) {
-            if (!ticket.injectedVersion.getDate().isAfter(releases.get(releases.size()-1).getDate()))
+            if (!ticket.openingVersion.getDate().isAfter(releases.get(releases.size() - 1).getDate()))
                 filteredList.add(ticket);
         }
         return filteredList;

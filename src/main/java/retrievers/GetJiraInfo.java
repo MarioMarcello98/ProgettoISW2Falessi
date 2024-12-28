@@ -1,6 +1,5 @@
 package retrievers;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,20 +9,21 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.util.*;
-
 import java.time.LocalDateTime;
-
-import utils.CSV;
 import entities.Release;
-import org.json.JSONException;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.json.JSONException;
+import utils.CSV;
+
+
 import static utils.JSON.readJsonFromUrl;
+
 
 public class GetJiraInfo {
     public static HashMap<LocalDateTime, String> releaseNames;
     public static HashMap<LocalDateTime, String> releaseID;
-    //public static ArrayList<LocalDateTime> releases;    public static Integer numVersions;
+    public static Integer numVersions;
     public static ArrayList<Release> releases;
 
     public static List<Release> getReleaseInfo(String projName, boolean ignoreCSV, int numVersions, boolean splitReleases) throws IOException, JSONException, org.codehaus.jettison.json.JSONException {
@@ -52,8 +52,6 @@ public class GetJiraInfo {
                     i++;
                     break;
                 }
-
-
             }
         } while (i < versionsWithReleaseDate.length());
         int j = 0;
@@ -63,13 +61,12 @@ public class GetJiraInfo {
                 j++;
             }
         }
-
-            if (!ignoreCSV)
-                CSV.generateCSVForVersions(releases, projName);
-            if (numVersions > 0)
-                return releases.subList(0, numVersions);
-            else if (splitReleases)
-                return releases.subList(0, Math.round((float)releases.size()/2));
+        if (!ignoreCSV)
+            CSV.generateCSVForVersions(releases, projName);
+        if (numVersions > 0)
+            return releases.subList(0, numVersions);
+        else if (splitReleases)
+            return releases.subList(0, Math.round((float) releases.size() / 2));
         return releases;
     }
 
@@ -79,15 +76,12 @@ public class GetJiraInfo {
         Release r = new Release(id, release.get("name").toString(), releaseDateTime);
         releases.add(r);
     }
+
     private static boolean existsReleaseWithDate(LocalDate localDate) {
         for (Release release : releases) {
             if (Objects.equals(release.getDate(), localDate.atStartOfDay()))
                 return true;
         }
-
         return false;
     }
-
-
-
 }

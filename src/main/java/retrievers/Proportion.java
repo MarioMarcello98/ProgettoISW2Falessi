@@ -1,36 +1,39 @@
-package retrievers;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import exception.InvalidTicketException;
 import entities.Release;
+import entities.Ticket;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import retrievers.GetJiraInfo;
+import retrievers.GetTicketInfo;
+import utils.CSV;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
 import static utils.JSON.readJsonFromUrl;
-import entities.Ticket;
-import java.util.ArrayList;
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
-import utils.CSV;
+
 
 public class Proportion {
-    // Predicted IV = FV - (FV - OV) * P
-        private static List<String> allProjects = Arrays.asList(
-                "AVRO",
-                "OPENJPA",
-                "STORM",
-                "ZOOKEEPER",
-                "SYNCOPE",
-                "TAJO",
-                "BOOKKEEPER"
-        );
-    public static void coldStartProportion(ArrayList<Ticket> tickets, String projName) throws JSONException, IOException {
+    private static List<String> allProjects = Arrays.asList(
+            "AVRO",
+            "OPENJPA",
+            "STORM",
+            "ZOOKEEPER",
+            "SYNCOPE",
+            "TAJO",
+            "BOOKKEEPER"
+    );
 
+    public static void coldStartProportion(ArrayList<Ticket> tickets, String projName) throws JSONException, IOException {
         ArrayList<Float> proportionValues = new ArrayList<>();
         List<Release> releases = GetJiraInfo.getReleaseInfo(projName, true, 0, false);
         FileWriter fileWriter = null;
@@ -53,18 +56,25 @@ public class Proportion {
                 fileWriter.close();
             }
         }
-
         proportionValues = readProportionFile(projName);
         Collections.sort(proportionValues);
         System.out.println("Proportion values: " + proportionValues);
         System.out.println(median(proportionValues));
-        System.out.println("Proportion value: " + proportionValue);
         int proportionValue = Math.round(median(proportionValues));
+        System.out.println("Proportion value: " + proportionValue);
+        System.out.println("releases: ");
+        for (Release release : releases) {
+            System.out.println(release.getId());
+        }
         for (Ticket ticket : tickets) {
-            if (ticket.proportion == 0) {
-                ticket.injectedVersion = releases.get(
-                        Math.max(0, Math.round((float) ticket.fixVersion.getId() - (ticket.fixVersion.getId() - ticket.openingVersion.getId()) * proportionValue) - 1)
-                );
+            if (ticket.injectedVersion == null) {
+                if (ticket.fixVersion != null) {
+                    if (ticket.openingVersion.getId() == ticket.fixVersion.getId())
+                        ticket.injectedVersion = releases.get(Math.max(0, ticket.fixVersion.getId() - 3));
+                    else
+                        ticket.injectedVersion = releases.get(
+                                Math.max(0, Math.round((float) ticket.fixVersion.getId() - (ticket.fixVersion.getId() - ticket.openingVersion.getId()) * proportionValue) - 1));
+                }
             }
         }
     }
@@ -96,25 +106,30 @@ public class Proportion {
     private static float median(List<Float> list) {
         float sum;
         if (list.size() % 2 == 0) {
-            sum = (float)list.get(list.size() / 2 - 1) + (float)list.get(list.size() / 2);
-            return sum/2;
+            sum = (float) list.get(list.size() / 2 - 1) + (float) list.get(list.size() / 2);
+            return sum / 2;
         } else {
             return list.get(list.size() / 2);
         }
     }
-    public static void computeProportion(Ticket ticket) {
 
+    public static void computeProportion(Ticket ticket) {
+        if (ticket.fixVersion == null) {
+            return;
+        }
         if (ticket.injectedVersion.getId() <= ticket.openingVersion.getId() && ticket.fixVersion.getId() == ticket.openingVersion.getId())
             ticket.proportion = ticket.fixVersion.getId() - ticket.injectedVersion.getId();
         else if (ticket.injectedVersion.getId() <= ticket.openingVersion.getId() && ticket.openingVersion.getId() < ticket.fixVersion.getId()) {
             ticket.proportion = (float) (ticket.fixVersion.getId() - ticket.injectedVersion.getId()) / (ticket.fixVersion.getId() - ticket.openingVersion.getId());
         }
     }
+
     public static float getProportionForProject(String projName) throws JSONException, IOException {
         int startAt = 0;
         ArrayList<Ticket> tickets = new ArrayList<>();
         JSONObject json;
-        List<Release> releases = GetJiraInfo.getReleaseInfo(projName, true, 0, false);        System.out.println("Retrieving tickets for project " + projName);
+        List<Release> releases = GetJiraInfo.getReleaseInfo(projName, true, 0, false);
+        System.out.println("Retrieving tickets for project " + projName);
         do {
             String query = "search?jql=project=" + projName + "+and+type=bug+and+(status=closed+or+status=resolved)+and+resolution=fixed&maxResults=1000&startAt=" + startAt;
             String url = "https://issues.apache.org/jira/rest/api/2/" + query;
@@ -126,7 +141,6 @@ public class Proportion {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 } catch (InvalidTicketException e) {
-                    // ignore: invalid ticket
                 }
             }
             startAt += 1000;
@@ -141,10 +155,4 @@ public class Proportion {
         System.out.println("proportion mean (project " + projName + "):" + GetTicketInfo.getProportionMean(tickets));
         return GetTicketInfo.getProportionMean(tickets);
     }
-
-
-
-
-    }
-
-
+}
