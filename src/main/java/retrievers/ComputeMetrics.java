@@ -108,7 +108,7 @@ public class ComputeMetrics {
     }
 
 
-    public void computeMetrics(List<Class> allClasses, String projName) throws IOException, ExecutionException {
+    public void computeMetrics(List<Class> allClasses, String projName) throws IOException{
         this.projName = projName;
         for (Class c : allClasses) {
             setSize(c);

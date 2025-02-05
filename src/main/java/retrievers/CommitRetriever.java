@@ -140,6 +140,7 @@ public class CommitRetriever {
                     modifiedClasses.add(entry.getNewPath());
             }
         } catch (ArrayIndexOutOfBoundsException ignored) {
+            logger.info("tentativo di accesso fuori dai limiti");
         } catch (IOException e) {
             throw new ExecutionException(e);
         }
