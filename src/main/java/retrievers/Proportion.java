@@ -113,13 +113,13 @@ public class Proportion {
     }
 
     public static float getProportionForProject(String projName) throws JSONException, IOException, ExecutionException {
-        int startAt = 0;
+        int start = 0;
         ArrayList<Ticket> tickets = new ArrayList<>();
         JSONObject json;
         List<Release> releases = GetJiraInfo.getReleaseInfo(projName, true, 0, false);
         logger.info("Retrieving tickets for project {}", projName);
         do {
-            String query = "search?jql=project=" + projName + "+and+type=bug+and+(status=closed+or+status=resolved)+and+resolution=fixed&maxResults=1000&startAt=" + startAt;
+            String query = "search?jql=project=" + projName + "+and+type=bug+and+(status=closed+or+status=resolved)+and+resolution=fixed&maxResults=1000&startAt=" + start;
             String url = "https://issues.apache.org/jira/rest/api/2/" + query;
             json = readJsonFromUrl(url);
             JSONArray issues = json.getJSONArray("issues");
@@ -132,7 +132,7 @@ public class Proportion {
                     // ignore: invalid ticket
                 }
             }
-            startAt += 1000;
+            start += 1000;
         } while (json.getJSONArray("issues").length() != 0);
         int count = 0;
         for (Ticket ticket : tickets) {
@@ -140,8 +140,8 @@ public class Proportion {
                 count++;
             }
         }
-        logger.info("Tickets having proportion (project {}): {} over {} tickets", projName, count, tickets.size());
         logger.info("proportion mean (project {} ): {} ", projName, GetTicketInfo.getProportionMean(tickets));
+        logger.info("Tickets having proportion (project {}): {} over {} tickets", projName, count, tickets.size());
         return GetTicketInfo.getProportionMean(tickets);
     }
 }

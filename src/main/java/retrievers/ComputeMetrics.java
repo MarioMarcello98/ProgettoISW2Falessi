@@ -1,5 +1,4 @@
 package retrievers;
-import exception.ExecutionException;
 import entities.Class;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;

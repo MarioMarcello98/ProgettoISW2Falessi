@@ -162,12 +162,12 @@ public class Weka {
             // Bidirectional
             bf.setOptions(new String[] {"-D", "2"});
             filter.setSearch(bf);
-            filteredTrainingData = Filter.useFilter(trainData, filter);
-            filteredTrainingData.setClassIndex(filteredTrainingData.numAttributes() - 1);
             filteredTestingData = Filter.useFilter(testData, filter);
+            filteredTrainingData = Filter.useFilter(trainData, filter);
             filteredTestingData.setClassIndex(filteredTestingData.numAttributes() - 1);
-            eval = new Evaluation(filteredTrainingData);
+            filteredTrainingData.setClassIndex(filteredTrainingData.numAttributes() - 1);
             nb = new NaiveBayes();
+            eval = new Evaluation(filteredTrainingData);
             nb.buildClassifier(filteredTrainingData);
             eval.evaluateModel(nb, filteredTestingData);
             metrics = new Metrics(eval.precision(0), eval.recall(0), eval.areaUnderROC(0), eval.kappa());
