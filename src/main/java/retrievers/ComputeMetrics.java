@@ -40,7 +40,7 @@ public class ComputeMetrics {
     }
 
 
-    private void setLOCAndChurn(Class c) throws IOException, ExecutionException {
+    private void setLOCAndChurn(Class c) throws IOException{
         List<RevCommit> commits = c.getAssociatedCommits();
         List<Integer> locAdded = new ArrayList<>();
         List<Integer> locDeleted = new ArrayList<>();

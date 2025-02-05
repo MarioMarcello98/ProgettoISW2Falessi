@@ -10,14 +10,14 @@ public class Class {
     private List<RevCommit> associatedCommits;
     private boolean isBuggy;
     private int size;
-    private int LOCTouched;
-    private int LOCAdded;
+    private int locTouched;
+    private int locAdded;
     private int maxLOCAdded;
     private double averageLOCAdded;
     private int churn;
     private int maxChurn;
     private double averageChurn;
-    private int NR;
+    private int nR;
     private int nAuth;
 
     public Class(String name, String implementation, Release release) {
@@ -27,11 +27,11 @@ public class Class {
         this.associatedCommits = new ArrayList<>();
         this.isBuggy = false;
         this.size = 0;
-        this.LOCAdded=0;
-        this.LOCTouched=0;
+        this.locAdded=0;
+        this.locTouched =0;
         this.maxLOCAdded = 0;
         this.averageLOCAdded = 0;
-        this.NR = 0;
+        this.nR = 0;
         this.churn = 0;
         this.maxChurn = 0;
         this.averageChurn = 0;
@@ -79,19 +79,19 @@ public class Class {
     }
 
     public int getNR() {
-        return NR;
+        return nR;
     }
 
-    public void setNR(int NR) {
-        this.NR = NR;
+    public void setNR(int nR) {
+        this.nR = nR;
     }
 
     public int getLOCAdded() {
-        return LOCAdded;
+        return locAdded;
     }
 
-    public void setLOCAdded(int LOCAdded) {
-        this.LOCAdded = LOCAdded;
+    public void setLOCAdded(int locAdded) {
+        this.locAdded = locAdded;
     }
 
     public int getMaxLOCAdded() {
@@ -143,11 +143,11 @@ public class Class {
     }
 
     public int getLOCTouched() {
-        return LOCTouched;
+        return locTouched;
     }
 
-    public void setLOCTouched(int LOCTouched) {
-        this.LOCTouched = LOCTouched;
+    public void setLOCTouched(int locTouched) {
+        this.locTouched = locTouched;
     }
 
     public int getnAuth() {
