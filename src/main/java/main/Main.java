@@ -10,7 +10,6 @@ public class Main {
             WalkForward.initSets("OPENJPA");
             WalkForward.classify("OPENJPA");
         } catch (Exception e) {
-            e.printStackTrace();
             throw new ExecutionException();
         }
 
