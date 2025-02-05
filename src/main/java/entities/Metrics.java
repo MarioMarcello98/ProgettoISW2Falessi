@@ -5,6 +5,7 @@ public class Metrics {
     private double recall;
     private double auc;
     private double kappa;
+
     public Metrics(double precision, double recall, double auc, double kappa) {
         this.precision = precision;
         this.recall = recall;

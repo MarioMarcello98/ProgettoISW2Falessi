@@ -1,11 +1,13 @@
 package entities;
 import weka.Weka;
+
 public class Classifier {
     public enum Type {
         RANDOM_FOREST,
         IBK,
         NAIVE_BAYES
     }
+
     private Type type;
     private Weka.SearchMethods searchMethod;
 

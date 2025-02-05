@@ -10,6 +10,7 @@ public class EvaluationReport {
     private Weka.SamplingMethod samplingMethod;
     private boolean costSensitiveClassification;
     private Metrics metrics;
+
     public EvaluationReport(int iteration, Classifier.Type classifier, String dataset, boolean featureSelection, Weka.SearchMethods fsSearchMethod, Weka.SamplingMethod samplingMethod, boolean costSensitiveClassification) {
         this.iteration = iteration;
         this.classifier = classifier;

@@ -3,13 +3,16 @@ import entities.Ticket;
 import org.eclipse.jgit.revwalk.RevCommit;
 import java.util.ArrayList;
 import java.util.List;
-public class FilterCommit{
+
+public class FilterCommit {
+    private FilterCommit() {}
+
     public static List<RevCommit> filterCommitsAssociatedToTicket(Ticket ticket, List<RevCommit> allCommits) {
         List<RevCommit> assCommits = new ArrayList<>();
         for (RevCommit commit : allCommits) {
-            if (!assCommits.contains(commit))
-                if (commit.getFullMessage().contains(ticket.key + ":") || commit.getFullMessage().contains("[" + ticket.key))
-                    assCommits.add(commit);
+            String fullMessage = commit.getFullMessage();
+            if ((fullMessage.contains(ticket.getKey() + ":") || fullMessage.contains(ticket.getKey() + "]") || fullMessage.contains(ticket.getKey() + " ") || fullMessage.contains("/" + ticket.getKey())) && !assCommits.contains(commit))
+                assCommits.add(commit);
         }
         return assCommits;
     }

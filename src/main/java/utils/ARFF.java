@@ -1,60 +1,67 @@
 package utils;
-package utils;
-import model.Class;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import exception.ExecutionException;
+import entities.Class;
+import java.io.*;
 import java.util.List;
+
 public class ARFF {
-    public static void generateARFF(String filename, List<Class> classes) {
+    public static void generateARFF(String filename, List<Class> classes) throws ExecutionException {
         File file = new File(filename);
-        FileWriter fileWriter = null;
-        try {
-            fileWriter = new FileWriter(file);
-            String name = filename.substring(0, filename.length() - 4);
+        try (FileWriter fileWriter = new FileWriter(file)) {
             fileWriter.append(
                     "@relation " + filename + "\n" +
                             "\n" +
-                            "@attribute ' LOC' numeric\n" +
-                            "@attribute ' NAuth' numeric\n" +
-                            "@attribute ' Fan-Out' numeric\n" +
-                            "@attribute ' Revisions' numeric\n" +
+                            "@attribute ' Size' numeric\n" +
                             "@attribute ' LOCAdded' numeric\n" +
-                            "@attribute ' MaxLOCAdded' numeric\n" +
+                            "@attribute ' LOCTouched' numeric\n" +
+                            "@attribute ' maxLOCAdded' numeric\n" +
                             "@attribute ' averageLOCAdded' numeric\n" +
+                            "@attribute ' NR' numeric\n" +
                             "@attribute ' Churn' numeric\n" +
                             "@attribute ' MaxChurn' numeric\n" +
                             "@attribute ' AverageChurn' numeric\n" +
-                            "@attribute ' Time Span (days)' numeric\n" +
+                            "@attribute ' nAuthors' numeric\n" +
                             "@attribute Buggy {'true','false'}\n\n" +
                             "@data\n"
             );
             for (Class c : classes) {
                 fileWriter.append(
                         c.getSize() + "," +
-                                c.getNAuth() + "," +
-                                c.getFanOut() + "," +
-                                c.getNR() + "," +
                                 c.getLOCAdded() + "," +
+                                c.getLOCTouched()+ "," +
                                 c.getMaxLOCAdded() + "," +
                                 c.getAverageLOCAdded() + "," +
+                                c.getNR()+ "," +
                                 c.getChurn() + "," +
                                 c.getMaxChurn() + "," +
                                 c.getAverageChurn() + "," +
-                                c.getTimeSpan() + "," +
+                                c.getnAuth() + "," +
                                 c.isBuggy()
                 );
                 fileWriter.append("\n");
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                fileWriter.flush();
-                fileWriter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            throw new ExecutionException(e);
         }
+    }
+
+    public int countNumOccurrences(File arff, String word) throws ExecutionException {
+        String line;
+        int count = 0;
+        try (
+                FileReader fileReader = new FileReader(arff);
+                BufferedReader bufferedReader = new BufferedReader(fileReader)
+        ) {
+            while ((line = bufferedReader.readLine()) != null) {
+                String[] words = line.split(",");
+                for (String w : words) {
+                    if (w.equals(word))
+                        count++;
+                }
+            }
+        } catch (IOException e) {
+            throw new ExecutionException(e);
+        }
+        return count;
     }
 }
