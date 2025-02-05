@@ -193,9 +193,6 @@ public class Weka {
 
             // Undersampling
             Filter samplingFilter = new SpreadSubsample();
-            String[] spreadSubSampleOptions = new String[2];
-            spreadSubSampleOptions[0] = "-M";
-            spreadSubSampleOptions[1] = "1.0";
             FilteredClassifier filteredClassifier = new FilteredClassifier();
             filteredClassifier.setFilter(samplingFilter);
             eval = new Evaluation(filteredTrainingData);
