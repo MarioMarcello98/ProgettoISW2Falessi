@@ -1,10 +1,12 @@
 package utils;
+
 import exception.ExecutionException;
 import entities.Class;
 import entities.EvaluationReport;
 import entities.Release;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -12,10 +14,12 @@ import java.io.IOException;
 import java.util.List;
 
 public class CSV {
+
     public enum Type {
         TRAINING_SET,
         TESTING_SET
     }
+
     private static final Logger logger = LoggerFactory.getLogger(CSV.class);
     private static final String FIRST_ROW = "Version, File Name, Size, LOCAdded, LOCTouched, MaxLOCAdded, averageLOCAdded, NR, Churn, MaxChurn, AverageChurn, nAuthors, Buggy";
 
@@ -38,10 +42,10 @@ public class CSV {
                         c.getName() + ", " +
                         c.getSize() + ", " +
                         c.getLOCAdded() + "," +
-                        c.getLOCTouched()+ "," +
+                        c.getLOCTouched() + "," +
                         c.getMaxLOCAdded() + "," +
                         c.getAverageLOCAdded() + "," +
-                        c.getNR()+ "," +
+                        c.getNR() + "," +
                         c.getChurn() + "," +
                         c.getMaxChurn() + "," +
                         c.getAverageChurn() + "," +
@@ -79,22 +83,23 @@ public class CSV {
     }
 
     private static String getPath(String projName, int iteration, int setType, int fileType) {
+        String basePath = "walkforward/" + projName + "_" + iteration + "/";
         switch (setType) {
             case 0:
                 switch (fileType) {
                     case 0:
-                        return projName + "_" + iteration + "/" + projName + "_" + iteration + "_training-set.csv";
+                        return basePath + projName + "_" + iteration + "_training-set.csv";
                     case 1:
-                        return projName + "_" + iteration + "/" + projName + "_" + iteration + "_training-set.arff";
+                        return basePath + projName + "_" + iteration + "_training-set.arff";
                     default:
                         return null;
                 }
             case 1:
                 switch (fileType) {
                     case 0:
-                        return projName + "_" + iteration + "/" + projName + "_" + iteration + "_testing-set.csv";
+                        return basePath + projName + "_" + iteration + "_testing-set.csv";
                     case 1:
-                        return projName + "_" + iteration + "/" + projName + "_" + iteration + "_testing-set.arff";
+                        return basePath + projName + "_" + iteration + "_testing-set.arff";
                     default:
                         return null;
                 }
@@ -104,9 +109,11 @@ public class CSV {
     }
 
     public static void generateCSVForReportsWithoutFS(List<EvaluationReport> reports) throws ExecutionException {
-        try (FileWriter fileWriterNoFS = new FileWriter(new File(reports.get(0).getDataset() + "-report-withoutFS.csv"))) {
-            fileWriterNoFS.append("Dataset, Iteration, Classifier, Precision, Recall, AUC, Kappa");
-            fileWriterNoFS.append("\n");
+        String filename = "report/" + reports.get(0).getDataset() + "-report-withoutFS.csv";
+        File file = new File(filename);
+        file.getParentFile().mkdirs();
+        try (FileWriter fileWriterNoFS = new FileWriter(file)) {
+            fileWriterNoFS.append("Dataset, Iteration, Classifier, Precision, Recall, AUC, Kappa\n");
             for (EvaluationReport report : reports) {
                 if (!report.isFeatureSelection()) {
                     String row = report.getDataset().substring(0, report.getDataset().length() - 3).toLowerCase() + ", "
@@ -116,23 +123,24 @@ public class CSV {
                             + report.getMetrics().getRecall() + ", "
                             + report.getMetrics().getAuc() + ", "
                             + report.getMetrics().getKappa();
-                    fileWriterNoFS.append(row);
-                    fileWriterNoFS.append("\n");
+                    fileWriterNoFS.append(row).append("\n");
                 }
             }
         } catch (Exception e) {
             throw new ExecutionException(e);
         }
-        logger.info("generated CSV without FS");
-
+        logger.info("Generated CSV without FS");
     }
 
     public static void generateCSVForReportsWithFS(List<EvaluationReport> reports) throws ExecutionException {
         EvaluationReportUtils evaluationReportUtils = new EvaluationReportUtils();
         List<List<EvaluationReport>> dividedReports = evaluationReportUtils.divideReportsBySearchMethod(reports);
         for (List<EvaluationReport> list : dividedReports) {
-            try (FileWriter fileWriter = new FileWriter(list.get(0).getDataset() + "-report-withFS-" + list.get(0).getFsSearchMethod().toString().toLowerCase() + ".csv")) {
-                fileWriter.append("Dataset, Iteration, Classifier, Precision, Recall, AUC, Kappa, Search Method").append("\n");
+            String filename = "report/" + list.get(0).getDataset() + "-report-withFS-" + list.get(0).getFsSearchMethod().toString().toLowerCase() + ".csv";
+            File file = new File(filename);
+            file.getParentFile().mkdirs();
+            try (FileWriter fileWriter = new FileWriter(file)) {
+                fileWriter.append("Dataset, Iteration, Classifier, Precision, Recall, AUC, Kappa, Search Method\n");
                 for (EvaluationReport report : list) {
                     fileWriter.append(report.getDataset() + ", "
                             + report.getIteration() + ", "
@@ -150,15 +158,18 @@ public class CSV {
                 throw new ExecutionException(e);
             }
         }
-        logger.info("generated CSV for FS");
+        logger.info("Generated CSV for FS");
     }
 
     public static void generateCSVForReportsWithSampling(List<EvaluationReport> reports) throws ExecutionException {
         EvaluationReportUtils evaluationReportUtils = new EvaluationReportUtils();
         List<List<EvaluationReport>> reportsWithSampling = evaluationReportUtils.divideReportsBySamplingMethod(reports);
         for (List<EvaluationReport> list : reportsWithSampling) {
-            try (FileWriter fileWriter = new FileWriter(list.get(0).getDataset() + "-report-withFS-best_first-with-" + list.get(0).getSamplingMethod().toString().toLowerCase() + ".csv")) {
-                fileWriter.append("Dataset, Iteration, Classifier, Precision, Recall, AUC, Kappa, Search Method, Sampling Method").append("\n");
+            String filename = "report/" + list.get(0).getDataset() + "-report-withFS-best_first-with-" + list.get(0).getSamplingMethod().toString().toLowerCase() + ".csv";
+            File file = new File(filename);
+            file.getParentFile().mkdirs();
+            try (FileWriter fileWriter = new FileWriter(file)) {
+                fileWriter.append("Dataset, Iteration, Classifier, Precision, Recall, AUC, Kappa, Search Method, Sampling Method\n");
                 for (EvaluationReport report : list) {
                     fileWriter.append(report.getDataset().substring(0, report.getDataset().length() - 3).toLowerCase())
                             .append(", ").append(String.valueOf(report.getIteration()))
@@ -175,12 +186,15 @@ public class CSV {
                 throw new ExecutionException(e);
             }
         }
-        logger.info("generated CSV for sampling");
+        logger.info("Generated CSV for sampling");
     }
 
     public static void generateCSVForReportsWithCSC(List<EvaluationReport> reports) throws ExecutionException {
-        try (FileWriter fileWriter = new FileWriter(reports.get(0).getDataset() + "-report-with-CSC.csv")) {
-            fileWriter.append("Dataset, Iteration, Classifier, Precision, Recall, AUC, Kappa, Search Method").append("\n");
+        String filename = "report/" + reports.get(0).getDataset() + "-report-with-CSC.csv";
+        File file = new File(filename);
+        file.getParentFile().mkdirs();
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            fileWriter.append("Dataset, Iteration, Classifier, Precision, Recall, AUC, Kappa, Search Method\n");
             for (EvaluationReport report : reports) {
                 fileWriter.append(report.getDataset().substring(0, report.getDataset().length() - 3).toLowerCase())
                         .append(", ").append(String.valueOf(report.getIteration()))
@@ -200,15 +214,13 @@ public class CSV {
 
     public static void generateCSVForVersions(List<Release> releases, String projName) throws ExecutionException {
         try (FileWriter fileWriter = new FileWriter(projName + "VersionInfo.csv")) {
-            fileWriter.append("Index, Version Name, Date");
-            fileWriter.append("\n");
+            fileWriter.append("Index, Version Name, Date\n");
             for (Release release : releases) {
                 fileWriter.append(
                         release.getId() + ", " +
                                 release.getName() + ", " +
-                                release.getDate() + ", "
+                                release.getDate() + "\n"
                 );
-                fileWriter.append("\n");
             }
         } catch (IOException e) {
             throw new ExecutionException(e);
