@@ -73,24 +73,19 @@ public class WalkForward {
     }
 
     private static String getPath(String projName, int iteration, int setType, int fileType) {
-        String basePath = "walkforward/" + projName + "_" + iteration + "/";
-        switch (setType) {
-            case TRAIN_SET:
-                switch (fileType) {
-                    case CSV_FILE:
-                        return basePath + projName + "_" + iteration + "_training-set.csv";
-                    case ARFF_FILE:
-                        return basePath + projName + "_" + iteration + "_training-set.arff";
-                }
-                break;
-            case TEST_SET:
-                switch (fileType) {
-                    case CSV_FILE:
-                        return basePath + projName + "_" + iteration + "_testing-set.csv";
-                    case ARFF_FILE:
-                        return basePath + projName + "_" + iteration + "_testing-set.arff";
-                }
-                break;
+        String basePath = "walkforward/" + projName + "_" + iteration + File.separator;
+        if (setType == TRAIN_SET) {
+            if (fileType == CSV_FILE) {
+                return basePath + projName + "_" + iteration + "_training-set.csv";
+            } else if (fileType == ARFF_FILE) {
+                return basePath + projName + "_" + iteration + "_training-set.arff";
+            }
+        } else if (setType == TEST_SET) {
+            if (fileType == CSV_FILE) {
+                return basePath + projName + "_" + iteration + "_testing-set.csv";
+            } else if (fileType == ARFF_FILE) {
+                return basePath + projName + "_" + iteration + "_testing-set.arff";
+            }
         }
         return null;
     }

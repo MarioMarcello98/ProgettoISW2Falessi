@@ -13,6 +13,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+
 public class CSV {
 
     public enum Type {
@@ -22,6 +23,7 @@ public class CSV {
 
     private static final Logger logger = LoggerFactory.getLogger(CSV.class);
     private static final String FIRST_ROW = "Version, File Name, Size, LOCAdded, LOCTouched, MaxLOCAdded, averageLOCAdded, NR, Churn, MaxChurn, AverageChurn, nAuthors, Buggy";
+    private static final String REPORT_DIR = "report" + File.separator;
 
     public static void generateCSV(List<Class> classes, String projName, int numVersions) throws IOException {
         logger.info("Generating the CSV file for {}, numVersions = {}", projName, numVersions);
@@ -83,7 +85,7 @@ public class CSV {
     }
 
     private static String getPath(String projName, int iteration, int setType, int fileType) {
-        String basePath = "walkforward/" + projName + "_" + iteration + "/";
+        String basePath = "walkforward/" + projName + "_" + iteration + File.separator;
         switch (setType) {
             case 0:
                 switch (fileType) {
@@ -109,7 +111,7 @@ public class CSV {
     }
 
     public static void generateCSVForReportsWithoutFS(List<EvaluationReport> reports) throws ExecutionException {
-        String filename = "report/" + reports.get(0).getDataset() + "-report-withoutFS.csv";
+        String filename = REPORT_DIR + reports.get(0).getDataset() + "-report-withoutFS.csv";
         File file = new File(filename);
         file.getParentFile().mkdirs();
         try (FileWriter fileWriterNoFS = new FileWriter(file)) {
@@ -136,7 +138,7 @@ public class CSV {
         EvaluationReportUtils evaluationReportUtils = new EvaluationReportUtils();
         List<List<EvaluationReport>> dividedReports = evaluationReportUtils.divideReportsBySearchMethod(reports);
         for (List<EvaluationReport> list : dividedReports) {
-            String filename = "report/" + list.get(0).getDataset() + "-report-withFS-" + list.get(0).getFsSearchMethod().toString().toLowerCase() + ".csv";
+            String filename = REPORT_DIR + list.get(0).getDataset() + "-report-withFS-" + list.get(0).getFsSearchMethod().toString().toLowerCase() + ".csv";
             File file = new File(filename);
             file.getParentFile().mkdirs();
             try (FileWriter fileWriter = new FileWriter(file)) {
@@ -165,7 +167,7 @@ public class CSV {
         EvaluationReportUtils evaluationReportUtils = new EvaluationReportUtils();
         List<List<EvaluationReport>> reportsWithSampling = evaluationReportUtils.divideReportsBySamplingMethod(reports);
         for (List<EvaluationReport> list : reportsWithSampling) {
-            String filename = "report/" + list.get(0).getDataset() + "-report-withFS-best_first-with-" + list.get(0).getSamplingMethod().toString().toLowerCase() + ".csv";
+            String filename = REPORT_DIR + list.get(0).getDataset() + "-report-withFS-best_first-with-" + list.get(0).getSamplingMethod().toString().toLowerCase() + ".csv";
             File file = new File(filename);
             file.getParentFile().mkdirs();
             try (FileWriter fileWriter = new FileWriter(file)) {
@@ -190,7 +192,7 @@ public class CSV {
     }
 
     public static void generateCSVForReportsWithCSC(List<EvaluationReport> reports) throws ExecutionException {
-        String filename = "report/" + reports.get(0).getDataset() + "-report-with-CSC.csv";
+        String filename = REPORT_DIR + reports.get(0).getDataset() + "-report-with-CSC.csv";
         File file = new File(filename);
         file.getParentFile().mkdirs();
         try (FileWriter fileWriter = new FileWriter(file)) {
